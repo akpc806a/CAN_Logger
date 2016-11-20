@@ -1,0 +1,7 @@
+baud 1000
+ack_en    1
+id_filter_mask  0
+id_filter_value  10
+log_std 1
+log_ext 1
+timestamp 1

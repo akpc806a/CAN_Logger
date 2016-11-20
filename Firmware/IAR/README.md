@@ -1,0 +1,1 @@
+This is project for IAR 6.50.3.4757 based on ChibiOS 2.6.7 RTOS for CAN bus logger
