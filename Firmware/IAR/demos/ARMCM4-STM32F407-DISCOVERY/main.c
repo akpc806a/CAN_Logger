@@ -247,7 +247,7 @@ int read_config_file()
   }
   
   // configure CAN
-  baud = (int)(7*baud/1000.0 + 0.5); // prescaler value  
+  baud = (int)(7*1000.0/((float)(baud)) + 0.5); // prescaler value  
   if (ack)
     cancfg.btr =  CAN_BTR_SJW(0) | CAN_BTR_TS2(2) | CAN_BTR_TS1(1) | CAN_BTR_BRP(baud - 1);
   else
