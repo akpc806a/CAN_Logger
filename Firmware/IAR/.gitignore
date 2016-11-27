@@ -20,7 +20,7 @@ private
 *.mk
 *.bash
 *.properties
-*.hex
+*.tmp
 obj
 lst
 DebugConfig

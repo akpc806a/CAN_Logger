@@ -27,9 +27,6 @@
 #include <time.h>
 
 
-// if defined, shell is using
-//#define SHELL_EN
-
 
 //#define INDICATE_IDLE_ON() palSetPad(GPIOA, GPIOA_PIN5_LED_R)
 //#define INDICATE_IDLE_OFF() palClearPad(GPIOA, GPIOA_PIN5_LED_R)
@@ -69,8 +66,6 @@ unsigned char bReqWrite = 0; // write request, the sd_buffer is being copied to 
 WORD sd_buffer_length_for_write = 0;
 
 unsigned char bWriteFault = 0; // in case of overlap or write fault
-
-static Thread *tp_writer; // thread pointer for 0.5 ms timer listener
 
 
 // fill buffer with spaces (before \r\n) to make it 512 byte size
@@ -140,7 +135,6 @@ void fwrite_string(char *pString)
 
 // file writing 
 FATFS SDC_FS;
-bool_t fs_ready = FALSE; // FS mounted and ready
 FIL *file;
 FRESULT fres;
 
@@ -155,7 +149,7 @@ void start_log()
 {
   // open file and write the begining of the load
   rtcGetTimeTm(&RTCD1, &timp);        
-  sprintf(sLine, "%04d-%02d-%02dT%02d-%02d-%02dZ.csv", timp.tm_year + 1900, timp.tm_mon, timp.tm_mday, timp.tm_hour, timp.tm_min, timp.tm_sec); // making new file
+  sprintf(sLine, "%02d-%02d-%02d.csv", timp.tm_hour, timp.tm_min, timp.tm_sec); // making new file
 
   file = fopen_(sLine, "a");
   if (bIncludeTimestamp)
@@ -200,8 +194,11 @@ int read_config_file()
   
   // read file
   file = fopen_("Config.txt", "r");
-  if (file == 0) return 0;
-
+  if (file == 0) 
+  {
+    return 0;
+  }
+  
   while( f_gets(sLine, STRLINE_LENGTH, file) )
   {
     if (sscanf(sLine, "%s %d", name, &value) == 0)
@@ -275,8 +272,12 @@ int init_sd()
     sdcDisconnect(&SDCD1);
     return 0;
   }
-  else
-    fs_ready = TRUE;
+  
+  // trying just dummy read file
+  file = fopen_("Config.txt", "r");
+  if (file)
+    fclose_(file);
+
   
   return 1;
 }
@@ -367,17 +368,7 @@ unsigned char bButtonPrev = 0;
  */
 int main(void) 
 {
-  #ifdef SHELL_EN
-    Thread *shelltp = NULL;
-  #endif
-  unsigned char i,k;
-  uint16_t *piData;
-  int addr;
-  CANTxFrame txmsg;
-  //static struct tm timp;
-  
-  //FIL * file;
-
+  //CANTxFrame txmsg;
   
   halInit();
   chSysInit();
@@ -413,21 +404,18 @@ INDICATE_IDLE_ON();
     
     if (bReqWrite)
     {
-      if (fs_ready != FALSE)
-      {
-        //palSetPad(GPIOD, GPIOD_PIN_15_BLUELED);
+      //palSetPad(GPIOD, GPIOD_PIN_15_BLUELED);
 INDICATE_IDLE_OFF();
-        if (fwrite_(sd_buffer_for_write, 1, sd_buffer_length_for_write, file) != sd_buffer_length_for_write)
-          bWriteFault = 2;
-        if (f_sync(file) != FR_OK)
-          bWriteFault = 2;
+      if (fwrite_(sd_buffer_for_write, 1, sd_buffer_length_for_write, file) != sd_buffer_length_for_write)
+        bWriteFault = 2;
+      if (f_sync(file) != FR_OK)
+        bWriteFault = 2;
 INDICATE_IDLE_ON();        
-        bReqWrite = 0;
-        
-        stLastWriting = chTimeNow(); // record time when we did write
-        
-        //palClearPad(GPIOD, GPIOD_PIN_15_BLUELED);
-      }
+      bReqWrite = 0;
+      
+      stLastWriting = chTimeNow(); // record time when we did write
+      
+      //palClearPad(GPIOD, GPIOD_PIN_15_BLUELED);
     }
     
     // start-stop log button handling
@@ -442,6 +430,9 @@ INDICATE_IDLE_ON();
       }
       else
       {
+        palClearPad(GPIOA, GPIOA_PIN5_LED_R);
+        palClearPad(GPIOA, GPIOA_PIN6_LED_B); 
+        
         // we are not logging -- opening SD card and starting log
         if (init_sd()) // trying to initialize sd card
         {
@@ -490,12 +481,5 @@ INDICATE_IDLE_ON();
       palSetPad(GPIOA, GPIOA_PIN5_LED_R);
 
   }
-}
-//------------------------------------------------------------------------------
-// restart MCU and ChibiOS
-void SoftReset()
-{
-  // http://www.chibios.org/dokuwiki/doku.php?id=chibios:howtos:stop_os
-  // TODO:
 }
 //------------------------------------------------------------------------------
