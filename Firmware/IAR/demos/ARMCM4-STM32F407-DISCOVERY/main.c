@@ -256,6 +256,99 @@ int read_config_file()
   return res;
 }
 
+
+
+// parse line of log to playback
+int parse_line(char *s, CANTxFrame* txmsg, uint32_t* iTimeStamp)
+{
+  int iCount = 0;
+  char * sStart = s;
+  char * sNext = s;
+  
+  // converting the time stamp
+  *iTimeStamp = strtol(sStart, &sNext, 10);
+  if (*sNext != ',') return 0; // spelling error
+  sStart = sNext+1;
+//printf("%d\r\n", *iTimeStamp);
+  
+  // converting id
+  txmsg->EID = strtol(sStart, &sNext, 16);
+  if (*sNext != ',') return 0; // spelling error
+  sStart = sNext+1;
+//printf("%d\r\n", txmsg->EID);
+  
+  // converting data
+  for (iCount = 0; iCount < 8; iCount++)
+  {
+    txmsg->data8[iCount] = strtol(sStart, &sNext, 16);
+    if ((*sNext != ',') && (*sNext != 0) && (*sNext != '\r') && (*sNext != '\n')) return 0; // spelling error
+    sStart = sNext+1;
+//printf("%x\r\n", txmsg->data8[iCount]);
+  }
+  
+  txmsg->DLC = iCount;
+  
+  return 1;
+  
+}
+
+// play recorded file
+int read_playback_file()
+{
+  CANTxFrame txmsg;
+  uint32_t iTimeMessage = 0;
+  uint32_t iTimeStart;
+  uint32_t iTimeOffst = 0;
+  int32_t iDelay = 0;
+  
+  // read file
+  file = fopen_("Play.csv", "r");
+  if (file == 0)
+  {
+    return 0;
+  }
+  
+  palClearPad(GPIOA, GPIOA_PIN7_LED_G);
+  
+  f_gets(sLine, STRLINE_LENGTH, file); // always skip first line (header)
+  
+  txmsg.RTR = 0; // only data frames
+  iTimeStart = chTimeNow();
+  
+  // there is Play.csv on SD folder -- playback mode
+  while( f_gets(sLine, STRLINE_LENGTH, file) )
+  {
+    if (parse_line(sLine, &txmsg, &iTimeMessage))
+    {
+      // if it doesnt fit to standard ID (or enforced extended ID format)
+      if (txmsg.EID > 0x7FF || bLogStdMsgs == 0)
+        txmsg.IDE = 1;
+      else
+        txmsg.IDE = 0;
+      
+      if (iTimeOffst == 0) 
+        iTimeOffst = iTimeMessage; // this is first message from file
+      
+      if (canTransmit(&CAND2, CAN_ANY_MAILBOX, &txmsg, 50) != RDY_OK) // sending with 50 ms time-out
+        palSetPad(GPIOA, GPIOA_PIN5_LED_R); // transmission error indication
+      
+      iTimeMessage -= iTimeOffst; // first message now has time 0
+      iDelay = iTimeMessage - (chTimeNow() - iTimeStart); // how much we should wait
+      if (iDelay > 0) 
+        chThdSleepMilliseconds(iDelay); // delay to maintain timestamps
+      
+      palTogglePad(GPIOA, GPIOA_PIN6_LED_B);
+    }
+  }
+  
+  fclose_(file);
+  
+  palSetPad(GPIOA, GPIOA_PIN7_LED_G);
+  palClearPad(GPIOA, GPIOA_PIN6_LED_B);
+  
+  return 1;
+}
+
 int init_sd()
 {
   // initializing SDC interface
@@ -438,6 +531,9 @@ INDICATE_IDLE_ON();
         {
           if (read_config_file()) // trying to read configuration file
           {
+            // maybe there is playback mode?
+            read_playback_file();
+            
             // all done -- start loging
             start_log();
           }
