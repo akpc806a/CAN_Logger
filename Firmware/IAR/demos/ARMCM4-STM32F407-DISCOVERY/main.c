@@ -262,6 +262,7 @@ int read_config_file()
 int parse_line(char *s, CANTxFrame* txmsg, uint32_t* iTimeStamp)
 {
   int iCount = 0;
+  int iValue = 0;
   char * sStart = s;
   char * sNext = s;
   
@@ -280,9 +281,14 @@ int parse_line(char *s, CANTxFrame* txmsg, uint32_t* iTimeStamp)
   // converting data
   for (iCount = 0; iCount < 8; iCount++)
   {
-    txmsg->data8[iCount] = strtol(sStart, &sNext, 16);
-    if ((*sNext != ',') && (*sNext != 0) && (*sNext != '\r') && (*sNext != '\n')) return 0; // spelling error
+    iValue = strtol(sStart, &sNext, 16);
+    if (sNext == sStart) 
+      break;
+    else
+      txmsg->data8[iCount] = iValue;
+    
     sStart = sNext+1;
+    
 //printf("%x\r\n", txmsg->data8[iCount]);
   }
   
@@ -328,14 +334,14 @@ int read_playback_file()
       
       if (iTimeOffst == 0) 
         iTimeOffst = iTimeMessage; // this is first message from file
-      
-      if (canTransmit(&CAND2, CAN_ANY_MAILBOX, &txmsg, 50) != RDY_OK) // sending with 50 ms time-out
-        palSetPad(GPIOA, GPIOA_PIN5_LED_R); // transmission error indication
-      
+
       iTimeMessage -= iTimeOffst; // first message now has time 0
       iDelay = iTimeMessage - (chTimeNow() - iTimeStart); // how much we should wait
       if (iDelay > 0) 
         chThdSleepMilliseconds(iDelay); // delay to maintain timestamps
+      
+      if (canTransmit(&CAND2, CAN_ANY_MAILBOX, &txmsg, 50) != RDY_OK) // sending with 50 ms time-out
+        palSetPad(GPIOA, GPIOA_PIN5_LED_R); // transmission error indication
       
       palTogglePad(GPIOA, GPIOA_PIN6_LED_B);
     }
