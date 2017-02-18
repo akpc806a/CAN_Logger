@@ -340,7 +340,7 @@ int read_playback_file()
       if (iDelay > 0) 
         chThdSleepMilliseconds(iDelay); // delay to maintain timestamps
       
-      if (canTransmit(&CAND2, CAN_ANY_MAILBOX, &txmsg, 50) != RDY_OK) // sending with 50 ms time-out
+      if (canTransmit(&CAND2, 1, &txmsg, 50) != RDY_OK) // sending with 50 ms time-out
         palSetPad(GPIOA, GPIOA_PIN5_LED_R); // transmission error indication
       
       palTogglePad(GPIOA, GPIOA_PIN6_LED_B);
