@@ -102,6 +102,8 @@ void copy_buffer()
 
 void request_write()
 {
+  chSysLock(); // prevent re-entry
+  
   if (bReqWrite)
     bWriteFault = 1; // buffer overlapping
   
@@ -109,6 +111,8 @@ void request_write()
   align_buffer();
   copy_buffer();
   bReqWrite = 1;
+  
+  chSysUnlock(); // leaving critical section
 }
 
 int iLastWriteSecond = 0;

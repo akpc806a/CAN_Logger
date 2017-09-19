@@ -23,6 +23,6 @@ The device can be used to log data from any CAN-bus based application: vehicle, 
 ## Where to buy ready made device
 
 - [My Tindie store](https://www.tindie.com/products/akpc806a/can-bus-logger-with-sd-card/)
-- [eBay](http://www.ebay.com/itm/CAN-Bus-Logger-with-SD-card/222408103840)
+- [eBay](https://www.ebay.com/sch/i.html?_from=R40&_trksid=p2380057.m570.l1313.TR0.TRC0.H0.XCAN+Bus+Logger+with+SD-card.TRS5&_nkw=CAN+Bus+Logger+with+SD-card&_sacat=0)
 
-[![N|Solid](http://i.ebayimg.com/images/g/-foAAOSwYXVYy2zs/s-l1600.jpg)
+[N|Solid](http://i.ebayimg.com/images/g/-foAAOSwYXVYy2zs/s-l1600.jpg)
