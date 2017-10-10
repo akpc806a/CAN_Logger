@@ -155,9 +155,9 @@ void start_log()
 
   file = fopen_(sLine, "a");
   if (bIncludeTimestamp)
-    strcpy(sLine, "Timestamp,ID,Data0,Data1,...\r\n");
+    strcpy(sLine, "Timestamp,ID,Data0,Data1,Data2,Data3,Data4,Data5,Data6,Data7\r\n");
   else
-    strcpy(sLine, "ID,Data0,Data1,...\r\n");
+    strcpy(sLine, "ID,Data0,Data1,Data2,Data3,Data4,Data5,Data6,Data7\r\n");
   fwrite_string(sLine);
   align_buffer();
   fwrite_(sd_buffer, 1, sd_buffer_length, file);
