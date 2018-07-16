@@ -6,7 +6,6 @@
   <configuration>
     <name>Debug</name>
     <outputs>
-      <file>$PROJ_DIR$\..\..\..\ext\lwip\src\api\netifapi.c</file>
       <file>$TOOLKIT_DIR$\inc\c\limits.h</file>
       <file>$PROJ_DIR$\Debug\Obj\udp.o</file>
       <file>$PROJ_DIR$\..\SystemBMS\src\PARAMETER_LOAD.c</file>

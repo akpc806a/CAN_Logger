@@ -586,7 +586,7 @@ static msg_t can1_rx(void *p) {
           {
             sNewFileName[0] = 0;
             for (i = 0; i < rxmsg.DLC; i++)
-              sprintf(sNewFileName+strlen(sNewFileName), "%01X", (rxmsg.data8[i])&0xF);
+              sprintf(sNewFileName+strlen(sNewFileName), "%02X", rxmsg.data8[i]);
           }
         }
       }
