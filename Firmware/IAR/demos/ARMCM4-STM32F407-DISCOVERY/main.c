@@ -462,6 +462,7 @@ int read_playback_file()
   return 1;
 }
 
+#define MAX_FILE_NAME 99999999
 int iMinFileName = INT_MAX;
 int iMaxFileName = -1;
 
@@ -475,6 +476,8 @@ FRESULT scan_files (char* path)
     char name[128];
     char ext[64];
     int iFileName = 0;
+    int iGapStart = 0;
+    int iGapEnd = MAX_FILE_NAME;
 
 
     res = f_opendir(&dir, path);                       /* Open the directory */
@@ -499,6 +502,19 @@ FRESULT scan_files (char* path)
                     // if it is csv file
                     if (sscanf(name, "%d", &iFileName) != 0)
                     {
+                      if (iFileName < MAX_FILE_NAME - iFileName)
+                      {
+                        // iFileName is closer to 0 than to MAX_FILE_NAME
+                        if (iGapStart < iFileName)
+                          iGapStart = iFileName;
+                      }
+                      else
+                      {
+                        // iFileName is closer to MAX_FILE_NAME than to 0
+                        if (iGapEnd > iFileName)
+                          iGapEnd = iFileName;
+                      }
+                        
                       // the name is a digit
                       if (iFileName > iMaxFileName) iMaxFileName = iFileName;
                       if (iFileName < iMinFileName) iMinFileName = iFileName;
@@ -509,6 +525,13 @@ FRESULT scan_files (char* path)
             }
         }
         //f_closedir(&dir);
+    }
+    
+    // special case when we rolled over max file name in cyclic writing
+    if (iMinFileName == 0 && iMaxFileName == MAX_FILE_NAME)
+    {
+      iMinFileName = iGapEnd;
+      iMaxFileName = iGapStart;
     }
 
     return res;
@@ -586,7 +609,7 @@ static msg_t can1_rx(void *p) {
           {
             sNewFileName[0] = 0;
             for (i = 0; i < rxmsg.DLC; i++)
-              sprintf(sNewFileName+strlen(sNewFileName), "%02X", rxmsg.data8[i]);
+              sprintf(sNewFileName+strlen(sNewFileName), "%01X", (rxmsg.data8[i])&0xF);
           }
         }
       }
@@ -696,6 +719,7 @@ int main(void)
       {
         // iMaxFileName
         iMaxFileName++;
+        if (iMaxFileName > MAX_FILE_NAME) iMaxFileName = 0;
         start_log(iMaxFileName, 0);
       }
     }
@@ -739,6 +763,7 @@ INDICATE_IDLE_OFF();
             sprintf(sName, "%d.csv", iMinFileName);
             f_unlink(sName);
             iMinFileName++;
+            if (iMinFileName > MAX_FILE_NAME) iMaxFileName = 0;
           }
         }
       }
@@ -798,6 +823,7 @@ INDICATE_IDLE_ON();
             {
               // iMaxFileName -- used as file name
               iMaxFileName++;
+              if (iMaxFileName > MAX_FILE_NAME) iMaxFileName = 0;
               start_log(iMaxFileName, 0);
             }
 
